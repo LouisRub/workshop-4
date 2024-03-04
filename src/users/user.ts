@@ -1,8 +1,6 @@
 import bodyParser from "body-parser";
 import express from "express";
-import { BASE_ONION_ROUTER_PORT } from "../config";
-import { BASE_USER_PORT } from "../config";
-import { REGISTRY_PORT } from "../config";
+import { BASE_USER_PORT,REGISTRY_PORT,  BASE_ONION_ROUTER_PORT} from "../config";
 import { Node } from "../registry/registry";
 import { rsaEncrypt, createRandomSymmetricKey, exportSymKey, symEncrypt } from "../crypto";
 
@@ -62,19 +60,18 @@ export async function user(userId: number) {
     lastSentMessage = message;
     let messageToSend = lastSentMessage;
     let destination = `${BASE_USER_PORT + destinationUserId}`.padStart(10, "0");
-    // create each layer of encryption for each node in the circuit
+    
     for (let i = 0; i < circuit.length; i++) {
       const node = circuit[i];
-      // create a symmetric key for each node in the circuit
+      
       const symKey = await createRandomSymmetricKey();
-      // (1) the previous value and the message should be concatenated and encrypted with the associated symmetricKey
+      
       const messageToEncrypt = `${destination + messageToSend}`;
-      // encode the destinationUserId as a 10 character string
+      
       destination = `${BASE_ONION_ROUTER_PORT + node.nodeId}`.padStart(10, "0");
       const encryptedMessage = await symEncrypt(symKey, messageToEncrypt);
-      // (2) then the symmetricKey needs to be encrypted with the associated node's pubKey
+      
       const encryptedSymKey = await rsaEncrypt(await exportSymKey(symKey), node.pubKey);
-      // then (2) should be concatenated with (1) in this order
       messageToSend = encryptedSymKey + encryptedMessage;
     }
 

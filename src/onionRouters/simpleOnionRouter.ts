@@ -1,10 +1,7 @@
 import bodyParser from "body-parser";
 import express from "express";
-import { BASE_ONION_ROUTER_PORT } from "../config";
+import { BASE_ONION_ROUTER_PORT, REGISTRY_PORT } from "../config";
 import { generateRsaKeyPair, exportPubKey, exportPrvKey, importPrvKey, rsaDecrypt, symDecrypt } from "../crypto";
-import { REGISTRY_PORT } from "../config";
-
-
 
 export async function simpleOnionRouter(nodeId: number) {
   const onionRouter = express();
@@ -51,7 +48,6 @@ export async function simpleOnionRouter(nodeId: number) {
     res.json({ result: lastMessageSource });
   });
 
-  //message
   onionRouter.post("/message", async (req, res) => {
     const layer = req.body.message;
     const encryptedSymKey = layer.slice(0, 344);
@@ -59,7 +55,7 @@ export async function simpleOnionRouter(nodeId: number) {
     const encryptedMessage = layer.slice(344) as string;
     const message = symKey ? await symDecrypt(symKey, encryptedMessage) : null;
   
-    lastMessageSource = nodeId;
+    
     lastReceivedDecryptedMessage = message ? message.slice(10) : null;
     lastReceivedEncryptedMessage = layer;
     lastMessageDestination = message ? parseInt(message.slice(0, 10), 10) : null;
