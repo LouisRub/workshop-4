@@ -22,7 +22,15 @@ export async function user(userId: number) {
   _user.get("/getLastSentMessage", (req, res) => {
     res.json({ result: lastSentMessage });
   });
+
+  _user.post("/message", (req, res) => {
+    const { message } = req.body;
   
+    lastReceivedMessage = message;
+  
+    res.status(200).send("success");
+  });
+
   // TODO implement the status route
   _user.get("/status", (req, res) => {
     res.send("live");
