@@ -51,6 +51,29 @@ export async function simpleOnionRouter(nodeId: number) {
     res.json({ result: lastMessageSource });
   });
 
+  //message
+  onionRouter.post("/message", async (req, res) => {
+    const layer = req.body.message;
+    const encryptedSymKey = layer.slice(0, 344);
+    const symKey = privateKey ? await rsaDecrypt(encryptedSymKey, await importPrvKey(privateKey)) : null;
+    const encryptedMessage = layer.slice(344) as string;
+    const message = symKey ? await symDecrypt(symKey, encryptedMessage) : null;
+  
+    lastMessageSource = nodeId;
+    lastReceivedDecryptedMessage = message ? message.slice(10) : null;
+    lastReceivedEncryptedMessage = layer;
+    lastMessageDestination = message ? parseInt(message.slice(0, 10), 10) : null;
+    
+    await fetch(`http://localhost:${lastMessageDestination}/message`, {
+      method: "POST",
+      body: JSON.stringify({ message: lastReceivedDecryptedMessage }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    res.send("success");
+  });
+
   const response = await fetch(`http://localhost:${REGISTRY_PORT}/registerNode`, {
     method: "POST",
     headers: {
